@@ -1,19 +1,13 @@
-package edu.ucsd.calab.usingextrasensorylabels;
+package edu.ucsd.calab.cardea;
 
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -23,41 +17,37 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import android.os.Vibrator;
+
 public class ScrollingActivity extends AppCompatActivity {
 
     private static final int TOP_N_PROBABLE_LABELS = 1;
@@ -67,68 +57,17 @@ public class ScrollingActivity extends AppCompatActivity {
     public static final String ESA_BROADCAST_SAVED_PRED_FILE = "edu.ucsd.calab.extrasensory.broadcast.saved_prediction_file";
     public static final String ESA_BROADCAST_EXTRA_KEY_TIMESTAMP = "timestamp";
 
-    private BroadcastReceiver _broadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (ESA_BROADCAST_SAVED_PRED_FILE.equals(intent.getAction())) {
-                String newTimestamp = intent.getStringExtra(ESA_BROADCAST_EXTRA_KEY_TIMESTAMP);
-                Log.d(LOG_TAG,"Caught broadcast for new timestamp: " + newTimestamp);
-                _timestamp = newTimestamp;
-                presentContent();
-                //pushToServer();
-            }
-        }
-    };
 
-    private void pushToServer() {
-        Log.i("push to server", "push");
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url ="http://ec2-54-202-77-233.us-west-2.compute.amazonaws.com:8000/poll";
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                       Log.i("response", response.toString());
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-
-            }
-        });
-// Add the request to the RequestQueue.
-        queue.add(stringRequest);
-
-    }
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        presentContent();
-        pushToServer();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Log.d(LOG_TAG,"registring for broadcast: " + ESA_BROADCAST_SAVED_PRED_FILE);
-        this.registerReceiver(_broadcastReceiver,new IntentFilter(ESA_BROADCAST_SAVED_PRED_FILE));
-    }
-
-    @Override
-    public void onPause() {
-        this.unregisterReceiver(_broadcastReceiver);
-        Log.d(LOG_TAG,"Unregistered broadcast: " + ESA_BROADCAST_SAVED_PRED_FILE);
-        super.onPause();
-    }
 
     private String _uuidPrefix = null;
     private String _timestamp = null;
-    private static final String NO_USER = "no user";
+    public static final String NO_USER = "no user";
     private static final String NO_TIMESTAMP = "no timestamp";
 
+
+
     private boolean fillUserSelector() {
-        pushToServer();
+        //pushToServer();
         boolean haveUsers = true;
         List<String> uuidPrefixes = getUsers();
         // first check if there are any users at all:
@@ -162,7 +101,7 @@ public class ScrollingActivity extends AppCompatActivity {
     }
 
     private boolean fillTimestampSelector() {
-        pushToServer();
+
         boolean haveTimestamps = true;
         List<String> timestamps = getTimestampsForUser(_uuidPrefix);
         // check if the user has any timestamps at all:
@@ -250,7 +189,7 @@ public class ScrollingActivity extends AppCompatActivity {
 
             double[] latLong = parseLocationLatitudeLongitude(fileContent);
 
-            String latlongstr = "(" + latLong.length + "): <" + latLong[0] + ", " + latLong[1] + ">";
+            //String latlongstr = "(" + latLong.length + "): <" + latLong[0] + ", " + latLong[1] + ">";
             String pairsStr = labelsAndProbs.size() + " labels:\n";
             for (Pair pair : labelsAndProbs) {
                 pairsStr += pair.first + ": " + pair.second + "\n";
@@ -258,7 +197,7 @@ public class ScrollingActivity extends AppCompatActivity {
 
             textToPresent =
                     "Timestamp: " + _timestamp + "\n\n" +
-                            "Location lat long: " + latlongstr + "\n" + "----------------\n" +
+                            "Location lat long: " + /*latlongstr +*/ "\n" + "----------------\n" +
                             "Server predictions:\n" + pairsStr + "\n" + "-------------\n";
 
         }
@@ -314,7 +253,15 @@ public class ScrollingActivity extends AppCompatActivity {
         }
         return esaFilesDir;
     }
-
+    public String getUser() {
+        List<String> users = getUsers();
+        if(users != null) {
+            return users.get(0);
+        }
+        else {
+            return null;
+        }
+    }
     /**
      * Get the list of users (UUID prefixes).
      * @return List of UUID prefixes (strings).
@@ -519,7 +466,25 @@ public class ScrollingActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_scrolling, menu);
         return true;
     }
+        @Override
+     protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+               presentContent();
+            //pushToServer();
+           }
+         @Override
+    public void onResume() {
+             super.onResume();
+              Log.d(LOG_TAG,"registring for broadcast: " + ESA_BROADCAST_SAVED_PRED_FILE);
+               //this.registerReceiver(_broadcastReceiver,new IntentFilter(ESA_BROADCAST_SAVED_PRED_FILE));
+           }
 
+    @Override
+    public void onPause() {
+        //this.unregisterReceiver(_broadcastReceiver);
+        Log.d(LOG_TAG, "Unregistered broadcast: " + ESA_BROADCAST_SAVED_PRED_FILE);
+        super.onPause();
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will

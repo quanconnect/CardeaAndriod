@@ -2,6 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
+=======
+      <module fileurl="file://$PROJECT_DIR$/Cardea.iml" filepath="$PROJECT_DIR$/Cardea.iml" />
+>>>>>>> 3abc6779a42f6af8aec063b9cc76be35d6c9d783
       <module fileurl="file://$PROJECT_DIR$/CardeaAndriod.iml" filepath="$PROJECT_DIR$/CardeaAndriod.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
